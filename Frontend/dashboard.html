@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — NutriTrack</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .main { padding: 40px 0 80px; }
+    .welcome-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; gap: 16px; flex-wrap: wrap; }
+    .welcome-text h1 { font-size: 1.9rem; margin-bottom: 4px; }
+    .welcome-text p { color: var(--text-muted); font-size: 0.95rem; }
+
+    .calorie-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      margin-bottom: 24px;
+      position: relative; overflow: hidden;
+    }
+    .calorie-card::before {
+      content: '';
+      position: absolute; top: -60px; right: -60px;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(124,108,252,0.12) 0%, transparent 70%);
+    }
+
+    .calorie-ring {
+      display: flex; align-items: center; gap: 32px; flex-wrap: wrap;
+    }
+
+    .ring-visual {
+      position: relative; width: 120px; height: 120px; flex-shrink: 0;
+    }
+    .ring-visual svg { transform: rotate(-90deg); }
+    .ring-center {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .ring-num { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; line-height: 1; }
+    .ring-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .calorie-info { flex: 1; min-width: 200px; }
+    .calorie-goal { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px; }
+    .calorie-goal strong { color: var(--text); }
+
+    .macro-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+    .macro-item { }
+    .macro-name { font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+    .macro-val { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; margin-bottom: 24px; }
+
+    .action-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      text-decoration: none; color: inherit;
+      display: flex; flex-direction: column; gap: 12px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .action-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--glow); }
+    .action-icon { font-size: 1.8rem; }
+    .action-title { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; }
+    .action-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+
+    .recent-list { display: flex; flex-direction: column; gap: 10px; }
+    .recent-item {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface2); border-radius: var(--radius-sm);
+      padding: 14px 18px;
+      animation: fadeUp 0.3s ease;
+    }
+    .recent-item-name { font-weight: 500; font-size: 0.95rem; }
+    .recent-item-time { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+
+    @media (max-width: 768px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .macro-row { grid-template-columns: repeat(3,1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="container">
+    <a class="nav-brand" href="dashboard.html">Nutri<span class="dot">Track</span></a>
+    <div class="nav-links">
+      <a href="dashboard.html" class="active">Dashboard</a>
+      <a href="add-meal.html">Add Meal</a>
+      <a href="history.html">History</a>
+      <a href="ai-chat.html">AI Coach</a>
+      <button class="btn btn-ghost btn-sm" onclick="handleLogout()">Sign Out</button>
+    </div>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="container">
+
+    <!-- Welcome Row -->
+    <div class="welcome-row">
+      <div class="welcome-text">
+        <h1>Good <span id="timeGreeting">day</span>, <span id="userName">there</span> 👋</h1>
+        <p id="todayDate">Loading...</p>
+      </div>
+      <a href="add-meal.html" class="btn btn-primary">+ Add Meal</a>
+    </div>
+
+    <!-- Calorie Ring Card -->
+    <div class="calorie-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+        <h2 style="font-size:1.1rem;">Today's Intake</h2>
+        <span id="mealCountBadge" class="badge badge-accent">0 meals</span>
+      </div>
+      <div class="calorie-ring">
+        <div class="ring-visual">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="var(--border)" stroke-width="10"/>
+            <circle id="ringProgress" cx="60" cy="60" r="50" fill="none"
+              stroke="var(--accent)" stroke-width="10"
+              stroke-dasharray="314" stroke-dashoffset="314"
+              stroke-linecap="round" style="transition: stroke-dashoffset 0.8s cubic-bezier(0.34,1.56,0.64,1)"/>
+          </svg>
+          <div class="ring-center">
+            <div class="ring-num" id="ringCal">0</div>
+            <div class="ring-label">kcal</div>
+          </div>
+        </div>
+        <div class="calorie-info">
+          <div class="calorie-goal">Goal: <strong id="calorieGoal">2000</strong> kcal &nbsp;·&nbsp; <strong id="calorieLeft">2000</strong> remaining</div>
+          <div class="macro-row">
+            <div class="macro-item">
+              <div class="macro-name">Protein</div>
+              <div class="macro-val" id="totalProtein" style="color:#7c6cfc">0g</div>
+              <div class="progress-wrap"><div class="progress-bar" id="proteinBar" style="width:0%; background:#7c6cfc"></div></div>
+            </div>
+            <div class="macro-item">
+              <div class="macro-name">Carbs</div>
+              <div class="macro-val" id="totalCarbs" style="color:#fcb86c">0g</div>
+              <div class="progress-wrap"><div class="progress-bar" id="carbsBar" style="width:0%; background:#fcb86c"></div></div>
+            </div>
+            <div class="macro-item">
+              <div class="macro-name">Fat</div>
+              <div class="macro-val" id="totalFats" style="color:#fc6c8f">0g</div>
+              <div class="progress-wrap"><div class="progress-bar" id="fatsBar" style="width:0%; background:#fc6c8f"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid-3" style="margin-bottom:24px;">
+      <a href="add-meal.html" class="action-card">
+        <div class="action-icon">🍽️</div>
+        <div class="action-title">Log a Meal</div>
+        <div class="action-desc">Analyze any food and track its nutrition instantly</div>
+      </a>
+      <a href="history.html" class="action-card">
+        <div class="action-icon">📋</div>
+        <div class="action-title">Meal History</div>
+        <div class="action-desc">Browse, search, and filter your past meals</div>
+      </a>
+      <a href="ai-chat.html" class="action-card">
+        <div class="action-icon">🤖</div>
+        <div class="action-title">AI Coach</div>
+        <div class="action-desc">Get personalized dietary advice and insights</div>
+      </a>
+    </div>
+
+    <!-- AI Insight + Recent Meals -->
+    <div class="grid-2">
+      <!-- AI Insight -->
+      <div class="card">
+        <div class="section-header">
+          <h3 class="section-title">AI Daily Insight</h3>
+          <button id="insightBtn" class="btn btn-secondary btn-sm" onclick="getDailyInsight()">Get Insight</button>
+        </div>
+        <div id="insightOutput">
+          <div class="empty-state" style="padding:30px 0;">
+            <div class="icon">🤖</div>
+            <p>Click "Get Insight" for AI-powered feedback on today's meals</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Meals -->
+      <div class="card">
+        <div class="section-header">
+          <h3 class="section-title">Recent Meals</h3>
+          <a href="history.html" class="btn btn-ghost btn-sm">View All →</a>
+        </div>
+        <div id="recentMeals">
+          <div class="empty-state" style="padding:30px 0;">
+            <div class="icon">🍽️</div>
+            <p>No meals logged today. <a href="add-meal.html" style="color:var(--accent)">Add your first meal</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/meals.js"></script>
+<script src="js/insights.js"></script>
+<script>
+  const CALORIE_GOAL    = 2000;
+  const PROTEIN_GOAL_G  = 120;
+  const CARBS_GOAL_G    = 250;
+  const FATS_GOAL_G     = 65;
+
+  async function initDashboard() {
+    const user = await requireAuth();
+    if (!user) return;
+
+    // Greeting
+    const h = new Date().getHours();
+    document.getElementById("timeGreeting").textContent = h < 12 ? "morning" : h < 17 ? "afternoon" : "evening";
+    document.getElementById("userName").textContent = user.user_metadata?.full_name?.split(" ")[0] || "there";
+    document.getElementById("todayDate").textContent = new Date().toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric", year:"numeric" });
+
+    // Stats
+    const summary = await loadTodaySummary();
+    const meals   = await loadMeals(new Date().toISOString().split("T")[0]);
+
+    document.getElementById("ringCal").textContent    = summary.calories;
+    document.getElementById("totalProtein").textContent = summary.protein + "g";
+    document.getElementById("totalCarbs").textContent   = summary.carbs + "g";
+    document.getElementById("totalFats").textContent    = summary.fats + "g";
+    document.getElementById("calorieGoal").textContent  = CALORIE_GOAL;
+    document.getElementById("calorieLeft").textContent  = Math.max(0, CALORIE_GOAL - summary.calories);
+    document.getElementById("mealCountBadge").textContent = summary.count + " meal" + (summary.count !== 1 ? "s" : "");
+
+    // Ring progress
+    const pct = Math.min(summary.calories / CALORIE_GOAL, 1);
+    const circumference = 2 * Math.PI * 50;
+    document.getElementById("ringProgress").style.strokeDashoffset = circumference * (1 - pct);
+    if (pct >= 1) document.getElementById("ringProgress").style.stroke = "var(--warning)";
+
+    // Macro bars
+    document.getElementById("proteinBar").style.width = Math.min(100, (summary.protein / PROTEIN_GOAL_G) * 100) + "%";
+    document.getElementById("carbsBar").style.width   = Math.min(100, (summary.carbs / CARBS_GOAL_G) * 100) + "%";
+    document.getElementById("fatsBar").style.width    = Math.min(100, (summary.fats / FATS_GOAL_G) * 100) + "%";
+
+    // Recent meals
+    const recentEl = document.getElementById("recentMeals");
+    if (meals.length > 0) {
+      recentEl.innerHTML = `<div class="recent-list">${
+        meals.slice(0, 5).map(m => `
+          <div class="recent-item">
+            <div>
+              <div class="recent-item-name">${escHtml(m.food_name)}</div>
+              <div class="recent-item-time">${m.calories} kcal · ${m.protein}g protein</div>
+            </div>
+            <span class="badge badge-accent">${m.calories} kcal</span>
+          </div>`).join("")
+      }</div>`;
+    }
+  }
+
+  initDashboard();
+</script>
+</body>
+</html>

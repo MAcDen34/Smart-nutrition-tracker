@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Coach — NutriTrack</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .main { padding: 40px 0 80px; }
+    .chat-layout { display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start; }
+
+    .chat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      display: flex; flex-direction: column;
+      height: calc(100vh - 200px); min-height: 500px;
+      overflow: hidden;
+    }
+
+    .chat-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+    }
+
+    .ai-avatar {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    .ai-status { font-size: 0.78rem; color: var(--success); display: flex; align-items: center; gap: 5px; }
+    .ai-status::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--success); }
+
+    .chat-body { flex: 1; overflow-y: auto; padding: 24px; }
+    .chat-body::-webkit-scrollbar { width: 4px; }
+    .chat-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .chat-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      display: flex; gap: 10px;
+    }
+    .chat-footer input { flex: 1; }
+
+    .suggestion-pill {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 100px; padding: 8px 14px;
+      font-size: 0.82rem; cursor: pointer; color: var(--text-muted);
+      transition: all 0.15s; white-space: nowrap;
+    }
+    .suggestion-pill:hover { border-color: var(--accent); color: var(--accent); }
+
+    .suggestions-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; flex-wrap: nowrap; }
+    .suggestions-scroll::-webkit-scrollbar { display: none; }
+
+    @media (max-width: 900px) {
+      .chat-layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<nav class="navbar">
+  <div class="container">
+    <a class="nav-brand" href="dashboard.html">Nutri<span class="dot">Track</span></a>
+    <div class="nav-links">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="add-meal.html">Add Meal</a>
+      <a href="history.html">History</a>
+      <a href="ai-chat.html" class="active">AI Coach</a>
+      <button class="btn btn-ghost btn-sm" onclick="handleLogout()">Sign Out</button>
+    </div>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="container">
+    <div style="margin-bottom:28px;">
+      <h1 style="font-size:1.9rem; margin-bottom:6px;">AI Nutrition Coach</h1>
+      <p style="color:var(--text-muted);">Ask anything about nutrition, diet, and healthy eating</p>
+    </div>
+
+    <div class="chat-layout">
+
+      <!-- Chat Window -->
+      <div class="chat-card">
+        <div class="chat-header">
+          <div class="ai-avatar">🤖</div>
+          <div>
+            <div style="font-family:'Syne',sans-serif; font-weight:700;">NutriCoach AI</div>
+            <div class="ai-status">Online</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="getDailyInsight()" style="margin-left:auto;" id="insightBtn">Analyze Today →</button>
+        </div>
+
+        <div class="chat-body" id="chatMessages">
+          <!-- Welcome message -->
+          <div class="msg msg-ai">
+            <div class="msg-avatar">🤖</div>
+            <div class="msg-bubble">
+              Hello! I'm your AI Nutrition Coach. I can help you with:<br><br>
+              🍽️ Meal planning and food suggestions<br>
+              💪 Protein and calorie targets<br>
+              🌍 Rwandan diet tips<br>
+              📊 Understanding your nutrition data<br><br>
+              What would you like to know?
+            </div>
+          </div>
+        </div>
+
+        <!-- Suggestions row -->
+        <div style="padding: 10px 20px; border-top: 1px solid var(--border);">
+          <div class="suggestions-scroll">
+            <div class="suggestion-pill" onclick="quickQuestion('What should I eat for breakfast in Rwanda?')">Rwandan breakfast ideas</div>
+            <div class="suggestion-pill" onclick="quickQuestion('How much protein do I need daily?')">Protein needs</div>
+            <div class="suggestion-pill" onclick="quickQuestion('How do I lose weight with my diet?')">Weight loss tips</div>
+            <div class="suggestion-pill" onclick="quickQuestion('What are healthy local foods in Rwanda?')">Local healthy foods</div>
+            <div class="suggestion-pill" onclick="quickQuestion('Is ugali healthy?')">Is ugali healthy?</div>
+          </div>
+        </div>
+
+        <div class="chat-footer">
+          <input type="text" id="chatInput" placeholder="Ask about nutrition, diet, food..." />
+          <button class="btn btn-primary" onclick="sendChatMessage()">Send</button>
+        </div>
+      </div>
+
+      <!-- Side Panel -->
+      <div style="display:flex; flex-direction:column; gap:20px;">
+
+        <div class="card">
+          <h3 style="font-size:1rem; font-weight:700; margin-bottom:14px;">Today's Summary</h3>
+          <div id="sideSummary" style="color:var(--text-muted); font-size:0.9rem;">Loading...</div>
+        </div>
+
+        <div class="card">
+          <h3 style="font-size:1rem; font-weight:700; margin-bottom:14px;">💡 AI Insight</h3>
+          <div id="insightOutput">
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">Click to get a personalized analysis of today's meals</p>
+            <button class="btn btn-primary btn-full btn-sm" onclick="getDailyInsight()">Get Insight</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="font-size:1rem; font-weight:700; margin-bottom:14px;">📚 Common Questions</h3>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div class="suggestion-pill" style="border-radius:var(--radius-sm); text-align:left;" onclick="quickQuestion('How many calories should I eat per day?')">Daily calorie needs</div>
+            <div class="suggestion-pill" style="border-radius:var(--radius-sm); text-align:left;" onclick="quickQuestion('What foods are high in protein?')">High protein foods</div>
+            <div class="suggestion-pill" style="border-radius:var(--radius-sm); text-align:left;" onclick="quickQuestion('What is a balanced meal?')">Balanced meals</div>
+            <div class="suggestion-pill" style="border-radius:var(--radius-sm); text-align:left;" onclick="quickQuestion('How do I gain muscle mass with diet?')">Muscle gain diet</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/meals.js"></script>
+<script src="js/insights.js"></script>
+<script>
+  function quickQuestion(q) {
+    document.getElementById("chatInput").value = q;
+    sendChatMessage();
+  }
+
+  async function initPage() {
+    await requireAuth();
+    const summary = await loadTodaySummary();
+    document.getElementById("sideSummary").innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; justify-content:space-between;">
+          <span>Calories</span><strong>${summary.calories} kcal</strong>
+        </div>
+        <div class="progress-wrap"><div class="progress-bar" style="width:${Math.min(100,(summary.calories/2000)*100)}%"></div></div>
+        <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+          <span>Protein</span><span style="color:#7c6cfc">${summary.protein}g</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+          <span>Carbs</span><span style="color:#fcb86c">${summary.carbs}g</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+          <span>Fat</span><span style="color:#fc6c8f">${summary.fats}g</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:0.85rem; border-top: 1px solid var(--border); padding-top:10px;">
+          <span style="color:var(--text-muted)">Meals today</span><span>${summary.count}</span>
+        </div>
+      </div>`;
+  }
+
+  initPage();
+</script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Nutrition Tracker — Login</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .auth-page {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    /* Left panel */
+    .auth-hero {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      justify-content: center; padding: 60px;
+      position: relative; overflow: hidden;
+    }
+
+    .auth-hero::before {
+      content: '';
+      position: absolute; top: -120px; left: -120px;
+      width: 480px; height: 480px;
+      background: radial-gradient(circle, rgba(124,108,252,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .auth-hero::after {
+      content: '';
+      position: absolute; bottom: -80px; right: -80px;
+      width: 320px; height: 320px;
+      background: radial-gradient(circle, rgba(252,108,143,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(124,108,252,0.12);
+      border: 1px solid rgba(124,108,252,0.25);
+      border-radius: 100px;
+      padding: 6px 14px;
+      font-size: 0.8rem; font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 28px;
+      width: fit-content;
+    }
+
+    .hero-title { font-size: 2.8rem; line-height: 1.1; margin-bottom: 20px; }
+    .hero-title span { color: var(--accent); }
+
+    .hero-desc { color: var(--text-muted); font-size: 1rem; line-height: 1.7; margin-bottom: 36px; max-width: 380px; }
+
+    .feature-list { display: flex; flex-direction: column; gap: 14px; }
+    .feature-item { display: flex; align-items: center; gap: 12px; font-size: 0.9rem; }
+    .feature-icon {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: var(--surface2); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; flex-shrink: 0;
+    }
+
+    /* Right panel */
+    .auth-form-panel {
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      padding: 60px 40px;
+    }
+
+    .auth-box { width: 100%; max-width: 400px; }
+
+    .auth-tabs {
+      display: flex; background: var(--surface2);
+      border-radius: var(--radius-sm); padding: 4px;
+      margin-bottom: 32px; border: 1px solid var(--border);
+    }
+    .auth-tab {
+      flex: 1; padding: 10px; text-align: center;
+      border-radius: 7px; cursor: pointer;
+      font-size: 0.9rem; font-weight: 500;
+      color: var(--text-muted); transition: all 0.2s;
+    }
+    .auth-tab.active { background: var(--accent); color: white; }
+
+    .auth-form { display: none; }
+    .auth-form.active { display: block; animation: fadeUp 0.3s ease; }
+
+    .auth-footer { margin-top: 28px; text-align: center; font-size: 0.85rem; color: var(--text-muted); }
+
+    @media (max-width: 768px) {
+      .auth-page { grid-template-columns: 1fr; }
+      .auth-hero { display: none; }
+      .auth-form-panel { padding: 40px 24px; }
+    }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<div class="auth-page">
+  <!-- Left Hero -->
+  <div class="auth-hero">
+    <div class="hero-tag">🌿 AI-Powered Nutrition</div>
+    <h1 class="hero-title">Track smarter.<br><span>Eat better.</span></h1>
+    <p class="hero-desc">
+      Smart Nutrition Tracker combines real-time food analysis with AI insights to help you build lasting healthy habits.
+    </p>
+    <div class="feature-list">
+      <div class="feature-item"><div class="feature-icon">🍽️</div> Analyze any meal instantly</div>
+      <div class="feature-item"><div class="feature-icon">🤖</div> AI-generated daily insights</div>
+      <div class="feature-item"><div class="feature-icon">📊</div> Track calories, protein, carbs & fats</div>
+      <div class="feature-item"><div class="feature-icon">🌍</div> Localized for Rwandan foods</div>
+    </div>
+  </div>
+
+  <!-- Right Form -->
+  <div class="auth-form-panel">
+    <div class="auth-box">
+      <div style="margin-bottom:28px;">
+        <div style="font-family:'Syne',sans-serif; font-size:1.4rem; font-weight:800; margin-bottom:6px;">
+          Nutri<span style="color:var(--accent)">Track</span>
+        </div>
+        <p style="color:var(--text-muted); font-size:0.9rem;">Your personal nutrition coach</p>
+      </div>
+
+      <!-- Tabs -->
+      <div class="auth-tabs">
+        <div class="auth-tab active" onclick="switchTab('login')">Sign In</div>
+        <div class="auth-tab" onclick="switchTab('signup')">Create Account</div>
+      </div>
+
+      <!-- Login Form -->
+      <div id="loginForm" class="auth-form active">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="email" placeholder="you@example.com" />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="password" placeholder="Your password" />
+        </div>
+        <button id="authBtn" data-label="Sign In" class="btn btn-primary btn-full btn-lg" onclick="handleLogin()">Sign In</button>
+      </div>
+
+      <!-- Signup Form -->
+      <div id="signupForm" class="auth-form">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="name" placeholder="Your name" />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="email" placeholder="you@example.com" />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="password" placeholder="Minimum 6 characters" />
+        </div>
+        <button id="authBtn" data-label="Create Account" class="btn btn-primary btn-full btn-lg" onclick="handleSignup()">Create Account</button>
+      </div>
+
+      <div class="auth-footer">
+        By continuing, you agree to our Terms of Service
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  function switchTab(tab) {
+    document.querySelectorAll(".auth-tab").forEach((t, i) => {
+      t.classList.toggle("active", (i === 0 && tab === "login") || (i === 1 && tab === "signup"));
+    });
+    document.getElementById("loginForm").classList.toggle("active", tab === "login");
+    document.getElementById("signupForm").classList.toggle("active", tab === "signup");
+  }
+
+  // Redirect if already logged in
+  (async () => {
+    const { data } = await _supabase.auth.getUser();
+    if (data?.user) window.location.href = "dashboard.html";
+  })();
+</script>
+</body>
+</html>

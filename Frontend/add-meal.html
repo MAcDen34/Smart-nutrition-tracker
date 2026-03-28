@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Meal — NutriTrack</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .main { padding: 40px 0 80px; }
+    .page-header { margin-bottom: 32px; }
+    .page-header h1 { font-size: 1.9rem; margin-bottom: 6px; }
+    .page-header p { color: var(--text-muted); }
+
+    .add-meal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+
+    .suggestions-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+      margin-top: 12px;
+    }
+
+    .suggestion-chip {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 10px 14px;
+      font-size: 0.85rem; cursor: pointer; text-align: center;
+      transition: all 0.15s; color: var(--text-muted);
+    }
+    .suggestion-chip:hover { border-color: var(--accent); color: var(--accent); background: rgba(124,108,252,0.08); }
+
+    .tip-box {
+      background: rgba(108,252,184,0.06);
+      border: 1px solid rgba(108,252,184,0.2);
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+      font-size: 0.85rem; color: var(--success);
+      margin-top: 16px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 768px) {
+      .add-meal-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<nav class="navbar">
+  <div class="container">
+    <a class="nav-brand" href="dashboard.html">Nutri<span class="dot">Track</span></a>
+    <div class="nav-links">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="add-meal.html" class="active">Add Meal</a>
+      <a href="history.html">History</a>
+      <a href="ai-chat.html">AI Coach</a>
+      <button class="btn btn-ghost btn-sm" onclick="handleLogout()">Sign Out</button>
+    </div>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="container">
+
+    <div class="page-header">
+      <h1>Log a Meal</h1>
+      <p>Describe your meal in natural language — e.g. "2 eggs and a cup of rice"</p>
+    </div>
+
+    <div class="add-meal-grid">
+
+      <!-- Left: Input -->
+      <div>
+        <div class="card">
+          <div class="form-group">
+            <label>Describe your meal</label>
+            <input type="text" id="foodInput" placeholder="e.g. 1 cup ugali with beans and spinach" style="font-size:1rem; padding: 14px 16px;" />
+          </div>
+
+          <div style="display:flex; gap:10px;">
+            <button id="analyzeBtn" class="btn btn-primary btn-lg" style="flex:1" onclick="analyzeFood()">Analyze</button>
+            <button id="saveBtn" class="btn btn-secondary btn-lg" onclick="saveMeal()" disabled>Save Meal</button>
+          </div>
+
+          <div id="nutritionResult"></div>
+        </div>
+
+        <!-- Quick Suggestions -->
+        <div class="card" style="margin-top:20px;">
+          <h3 style="font-size:0.95rem; font-weight:600; margin-bottom:12px; color:var(--text-muted);">QUICK SUGGESTIONS</h3>
+          <div class="suggestions-grid">
+            <div class="suggestion-chip" onclick="quickFill('1 cup ugali with beans')">Ugali + Beans</div>
+            <div class="suggestion-chip" onclick="quickFill('2 boiled eggs')">2 Boiled Eggs</div>
+            <div class="suggestion-chip" onclick="quickFill('1 banana')">Banana</div>
+            <div class="suggestion-chip" onclick="quickFill('1 cup sweet potato')">Sweet Potato</div>
+            <div class="suggestion-chip" onclick="quickFill('grilled chicken 150g')">Grilled Chicken</div>
+            <div class="suggestion-chip" onclick="quickFill('1 avocado')">Avocado</div>
+            <div class="suggestion-chip" onclick="quickFill('100g white rice with beef stew')">Rice + Beef Stew</div>
+            <div class="suggestion-chip" onclick="quickFill('1 cup milk')">Milk</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Tips -->
+      <div>
+        <div class="card">
+          <h3 style="font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; margin-bottom:16px;">How to get accurate results</h3>
+
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            <div style="display:flex; gap:12px;">
+              <span style="font-size:1.3rem; flex-shrink:0;">✅</span>
+              <div>
+                <div style="font-weight:500; margin-bottom:3px;">Include quantities</div>
+                <div style="font-size:0.85rem; color:var(--text-muted);">"2 cups of rice" is much better than just "rice"</div>
+              </div>
+            </div>
+            <div style="display:flex; gap:12px;">
+              <span style="font-size:1.3rem; flex-shrink:0;">✅</span>
+              <div>
+                <div style="font-weight:500; margin-bottom:3px;">Describe cooking method</div>
+                <div style="font-size:0.85rem; color:var(--text-muted);">"fried chicken" vs "grilled chicken" changes calories significantly</div>
+              </div>
+            </div>
+            <div style="display:flex; gap:12px;">
+              <span style="font-size:1.3rem; flex-shrink:0;">✅</span>
+              <div>
+                <div style="font-weight:500; margin-bottom:3px;">You can log multiple items</div>
+                <div style="font-size:0.85rem; color:var(--text-muted);">"1 egg, 2 slices bread, and 1 cup tea" works perfectly</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tip-box" style="margin-top:20px;">
+            💡 <strong>Rwanda tip:</strong> Use foods like ugali, isombe, ikivuguto, and ibirayi. The Edamam API recognizes most common foods by their English names.
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:20px;">
+          <h3 style="font-family:'Syne',sans-serif; font-size:1rem; font-weight:700; margin-bottom:14px;">Today's Progress</h3>
+          <div id="todayProgress">
+            <div style="color:var(--text-muted); font-size:0.9rem;">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/meals.js"></script>
+<script>
+  function quickFill(text) {
+    document.getElementById("foodInput").value = text;
+    document.getElementById("foodInput").focus();
+  }
+
+  document.getElementById("foodInput").addEventListener("keydown", e => {
+    if (e.key === "Enter") analyzeFood();
+  });
+
+  async function initPage() {
+    await requireAuth();
+    const summary = await loadTodaySummary();
+    const GOAL = 2000;
+    const pct  = Math.min(100, Math.round((summary.calories / GOAL) * 100));
+
+    document.getElementById("todayProgress").innerHTML = `
+      <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+        <span style="font-size:0.85rem; color:var(--text-muted)">Calories</span>
+        <span style="font-size:0.85rem; font-weight:600">${summary.calories} / ${GOAL} kcal</span>
+      </div>
+      <div class="progress-wrap" style="margin-bottom:16px;">
+        <div class="progress-bar" style="width:${pct}%"></div>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <span class="badge badge-accent">🥩 ${summary.protein}g protein</span>
+        <span class="badge badge-warning">🌾 ${summary.carbs}g carbs</span>
+        <span class="badge badge-danger">🥑 ${summary.fats}g fat</span>
+      </div>`;
+  }
+
+  initPage();
+</script>
+</body>
+</html>
