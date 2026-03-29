@@ -1,6 +1,4 @@
-// js/insights.js — AI nutrition insights via Claude API (through our backend)
-
-const BACKEND_URL = "http://localhost:3000"; // change to server IP after deployment
+const BACKEND_URL = ""; 
 
 async function getDailyInsight() {
   const user = await getCurrentUser();
